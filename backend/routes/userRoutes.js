@@ -15,18 +15,17 @@ import {
 } from '../controllers/userController.js';
 
 const router = express.Router();
-
 router.get('/login', getLogin);
 router.get('/auth/google', verifyLogin);
 router.get('/auth/google/callback', handleGoogleCallback);
 router.post('/register', registerUser);
 router.post('/logout', protect, logoutUser);
 router.get('/profile/:id', protect, getProfile);
-router.post('/editProfile/:id', protect, editProfile);
-router.post('/sendFollowRequest/:userId', protect, sendFollowRequest);
-router.post('/acceptFollowRequest/:userId', protect, acceptFollowRequest) 
-router.post('/showUserDetails/:userId', protect, showUserDetails);
-router.get('/listPublicUsers', protect, showAllPublicUsers);
+router.put('/editProfile/:id', protect, editProfile);
+router.post('/follow/:userId', protect, sendFollowRequest);
+router.post('/follow/:userId/accept', protect, acceptFollowRequest); 
+router.get('/user/:userId', protect, showUserDetails); 
+router.get('/publicUsers', protect, showAllPublicUsers); 
 
 
 

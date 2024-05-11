@@ -5,7 +5,7 @@ import cors from 'cors';
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import userRoutes from './routes/userRoutes.js';
 import path from 'path'
-// import adminRoutes from './routes/adminRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import connectDB from "./config/db.js";
 const app = express();
 
@@ -28,7 +28,7 @@ app.use(cookieParser());
 app.use(cors());
 
 app.use('/users', userRoutes);
-// app.use('/api/admin', adminRoutes);
+app.use('/admin', adminRoutes); 
 
 app.use(notFound);
 app.use(errorHandler);
