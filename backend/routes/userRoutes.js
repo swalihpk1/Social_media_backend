@@ -8,6 +8,10 @@ import {
     logoutUser,
     getLogin,
     handleGoogleCallback,
+    sendFollowRequest,
+    acceptFollowRequest,
+    showUserDetails,
+    showAllPublicUsers
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -19,7 +23,12 @@ router.post('/register', registerUser);
 router.post('/logout', protect, logoutUser);
 router.get('/profile/:id', protect, getProfile);
 router.post('/editProfile/:id', protect, editProfile);
-// router.get('/showUsers',protect,showUsers)
+router.post('/sendFollowRequest/:userId', protect, sendFollowRequest);
+router.post('/acceptFollowRequest/:userId', protect, acceptFollowRequest) 
+router.post('/showUserDetails/:userId', protect, showUserDetails);
+router.get('/listPublicUsers', protect, showAllPublicUsers);
+
+
 
 
 export default router;

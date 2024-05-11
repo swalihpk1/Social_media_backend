@@ -37,16 +37,13 @@ const verifyLogin = asyncHandler(async (req, res, next) => {
 const handleGoogleCallback = asyncHandler(async (req, res, next) => {
 
     passport.authenticate('google', async (err, user) => {
-        console.log("user", user);
         if (err) {
             return next(err);
         }
         if (!user) {
-            console.log("no user");
             return res.status(401).json({ message: "User not exist" });
         }
-        console.log('Id', user._id.toString());
-        generateToken(res, user._id, 'userJwt')
+        const token = await generateToken(res, user._id, 'userJwt')
         res.status(201).json({
             _id: user._id,
             name: user.name,
@@ -54,7 +51,8 @@ const handleGoogleCallback = asyncHandler(async (req, res, next) => {
             bio: user.bio,
             phone: user.phone,
             imageUrl: user.imageUrl,
-            isPrivate: user.isPrivate
+            isPrivate: user.isPrivate,
+            token: token
         })
     })(req, res, next);
 });
@@ -117,6 +115,7 @@ const registerUser = asyncHandler(async (req, res) => {
             phone: user.phone,
             imageUrl: user.imageUrl,
             isPrivate: user.isPrivate,
+            token: token
         });
     } else {
         res.status(401).json({ message: 'Invalid user data' });
@@ -227,7 +226,101 @@ const editProfile = asyncHandler(async (req, res) => {
 });
 
 
+//@desc  Edit profile
+//route  POST /users/editProfile
+//@access Private
+const sendFollowRequest = (asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUser = req.user;
 
+    const requestedUser = await User.findById(userId);
+    if (!requestedUser) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!requestedUser.isPrivate) {
+        return res.status(400).json({ message: 'User is not private' });
+    }
+
+    requestedUser.allowedFollowers.push(currentUser._id);
+    await requestedUser.save();
+
+    return res.status(200).json({ message: 'Follow request sent successfully' });
+}));
+
+
+//@desc  Edit profile
+//route  POST /users/editProfile
+//@access Private
+const acceptFollowRequest = (asyncHandler(async (req, res) => {
+    const { requesterId } = req.params;
+    const currentUser = req.user;
+
+    const user = await User.findById(currentUser._id);
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.allowedFollowers.includes(requesterId)) {
+        return res.status(400).json({ message: 'You have no follow request from this user' });
+    }
+
+    user.followers.push(requesterId);
+
+
+    user.allowedFollowers = user.allowedFollowers.filter(id => id !== requesterId);
+
+    await user.save();
+
+    return res.status(200).json({ message: 'Follow request accepted successfully' });
+}));
+
+
+const showUserDetails = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const currentUser = req.user;
+
+  const user = await User.findById(userId)
+    .populate("followings", "name email") 
+      .select("-password -allowedFollowers ") 
+    .lean();
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.isPrivate) {
+    if (!user.followers.includes(currentUser._id)) {
+      return res
+        .status(401)
+        .json({ message: "You are not authorized to view this user's profile" });
+    }
+  }
+
+  res.status(200).json(user);
+});
+
+
+
+const showAllPublicUsers = asyncHandler(async (req, res) => {
+    const currentUser = req.user;
+
+    const publicUsers = await User.find({ isPrivate: false })
+        .populate("followings", "name email") 
+        .select("-password -allowedFollowers -isPrivate")
+        .lean();
+
+
+    publicUsers.forEach((user) => {
+        if (user.followers.includes(currentUser._id)) {
+            user.isFollowing = true;
+        } else {
+            user.isFollowing = false;
+        }
+    });
+
+    res.status(200).json(publicUsers);
+});
 
 
 
@@ -238,5 +331,10 @@ export {
     registerUser,
     getProfile,
     editProfile,
-    logoutUser
+    sendFollowRequest,
+    acceptFollowRequest,
+    showUserDetails,
+    logoutUser,
+    showAllPublicUsers
+
 }
