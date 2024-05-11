@@ -18,22 +18,23 @@ cloudinary.v2.config({
     secure: true,
 });
 
-//@desc  Auth user/set token
+//@desc  Get login page
 //route   GET /users/login
 //@access Public
 const getLogin = asyncHandler(async (req, res) => {
     res.send('<a href ="/users/auth/google"> Sign in with google')
 })
 
-//@desc  Auth user/set token
-//route  POST /users/login
+//@desc  Google auth 
+//route  GET /users/auth/google.callback
 //@access Public
-
-
 const verifyLogin = asyncHandler(async (req, res, next) => {
     passport.authenticate('google', { scope: ['email', 'profile'] })(req, res, next);
 });
 
+//@desc  Auth user/set token
+//route  GET /users/auth/google/callback
+//@access Public
 const handleGoogleCallback = asyncHandler(async (req, res, next) => {
 
     passport.authenticate('google', async (err, user) => {
@@ -135,8 +136,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 
-//@desc  
-//route  GET /users/profile
+//@desc  for getting user Profile details
+//route  GET /users/profile/:id
 //@access Private
 const getProfile = asyncHandler(async (req, res) => {
     const userId = req.params.id;
@@ -164,8 +165,8 @@ export default getProfile;
 
 
 
-//@desc  Edit profile
-//route  POST /users/editProfile
+//@desc  for Edit Profile details
+//route  PUT /editProfile//:id
 //@access Private
 const editProfile = asyncHandler(async (req, res) => {
     const userId = req.params.id;
@@ -226,8 +227,8 @@ const editProfile = asyncHandler(async (req, res) => {
 });
 
 
-//@desc  Edit profile
-//route  POST /users/editProfile
+//@desc  Sending follow request
+//route  POST /users/follow/:userId'
 //@access Private
 const sendFollowRequest = (asyncHandler(async (req, res) => {
     const { userId } = req.params;
@@ -250,7 +251,7 @@ const sendFollowRequest = (asyncHandler(async (req, res) => {
 
 
 //@desc  Edit profile
-//route  POST /users/editProfile
+//route  POST /users/follow/accept/:userId
 //@access Private
 const acceptFollowRequest = (asyncHandler(async (req, res) => {
     const { requesterId } = req.params;
@@ -276,37 +277,42 @@ const acceptFollowRequest = (asyncHandler(async (req, res) => {
 }));
 
 
+//@desc  specifically show user details
+//route  GET /users/showUserDetails/:userId'
+//@access Private
 const showUserDetails = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
-  const currentUser = req.user;
+    const { userId } = req.params;
+    const currentUser = req.user;
 
-  const user = await User.findById(userId)
-    .populate("followings", "name email") 
-      .select("-password -allowedFollowers ") 
-    .lean();
+    const user = await User.findById(userId)
+        .populate("followings", "name email")
+        .select("-password -allowedFollowers ")
+        .lean();
 
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  if (user.isPrivate) {
-    if (!user.followers.includes(currentUser._id)) {
-      return res
-        .status(401)
-        .json({ message: "You are not authorized to view this user's profile" });
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
     }
-  }
 
-  res.status(200).json(user);
+    if (user.isPrivate) {
+        if (!user.followers.includes(currentUser._id)) {
+            return res
+                .status(401)
+                .json({ message: "You are not authorized to view this user's profile" });
+        }
+    }
+
+    res.status(200).json(user);
 });
 
 
-
+//@desc  It will list all public users
+//route  GET /users/publicUsers
+//@access Private
 const showAllPublicUsers = asyncHandler(async (req, res) => {
     const currentUser = req.user;
 
     const publicUsers = await User.find({ isPrivate: false })
-        .populate("followings", "name email") 
+        .populate("followings", "name email")
         .select("-password -allowedFollowers -isPrivate")
         .lean();
 

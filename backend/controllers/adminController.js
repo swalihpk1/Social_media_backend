@@ -4,6 +4,9 @@ import User from "../models/userModel.js";
 import generateToken from "../utils/generateToken.js";
 
 
+//@desc  admin Auth using email,password
+//route  POST /admin/auth
+//@access Public
 const authAdmin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const admin = await Admin.findOne({ email });
@@ -21,7 +24,9 @@ const authAdmin = asyncHandler(async (req, res) => {
     }
 });
 
-
+//@desc Logout admin
+//route  POST /admin/logout
+//@access Public
 const logoutAdmin = asyncHandler(async (req, res) => {
     res.cookie('adminJwt', '', {
         httpOnly: true,
@@ -30,13 +35,17 @@ const logoutAdmin = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Admin logged out' });
 });
 
-
+//@desc List all users both private and public
+//route  GET /admin/usersList
+//@access Private
 const getAllUsers = asyncHandler(async (req, res) => {
     const users = await User.find({}).select('-password');
     res.json({ users });
 });
 
-
+//@desc Specifically access details of profiles
+//route  GET /admin/userProfile/:id'
+//@access Private
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.params.id).select('-password');
     if (user) {
@@ -46,9 +55,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 });
-
-
-getUserProfile
 
 export { 
     authAdmin,

@@ -19,7 +19,6 @@ dotenv.config();
 
 const port = process.env.PORT || 5001;
 
-//mongoDB connection 
 connectDB();
 
 app.use(express.json());
