@@ -73,6 +73,22 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+        return res.status(400).json({ message: 'Invalid phone number (must be 10 digits)' });
+    }
+
+
+    if (name.length < 3) {
+        return res.status(400).json({ message: 'Name must be at least 3 characters long' });
+    }
+
     let imageUrl;
     if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path);
@@ -92,7 +108,7 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 
     if (user) {
-        generateToken(res, user._id, 'userJwt')
+        const token = generateToken(res, user._id, 'userJwt');
         res.status(201).json({
             _id: user._id,
             name: user.name,
@@ -100,14 +116,13 @@ const registerUser = asyncHandler(async (req, res) => {
             bio: user.bio,
             phone: user.phone,
             imageUrl: user.imageUrl,
-            isPrivate: user.isPrivate
+            isPrivate: user.isPrivate,
         });
     } else {
-        res.status(401);
-        throw new Error('Invalid user data');
+        res.status(401).json({ message: 'Invalid user data' });
     }
+});
 
-})
 
 //@desc  logoutUser
 //route  POST /users/logout
@@ -150,11 +165,11 @@ export default getProfile;
 
 
 
-//@desc  deposite money
-//route  POST /users/deposite
+//@desc  Edit profile
+//route  POST /users/editProfile
 //@access Private
 const editProfile = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
+    const userId = req.params.id;
 
     const user = await User.findById(userId);
 
@@ -164,9 +179,32 @@ const editProfile = asyncHandler(async (req, res) => {
     }
 
     user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
     user.bio = req.body.bio || user.bio;
-    user.phone = req.body.phone || user.phone;
+    user.isPrivate = req.body.isPrivate || user.isPrivate;
+
+    if (req.body.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+/;
+        if (!emailRegex.test(req.body.email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        user.email = req.body.email;
+    }
+
+    if (req.body.phone) {
+        const phoneRegex = /^\d{10}$/;
+        if (!phoneRegex.test(req.body.phone)) {
+            return res.status(400).json({ message: 'Invalid phone number (must be 10 digits)' });
+        }
+        user.phone = req.body.phone;
+    }
+
+    if (req.body.name && req.body.name.length < 3) {
+        return res.status(400).json({ message: 'Name must be at least 3 characters long' });
+    }
+
+    if (req.body.password) {
+        user.password = req.body.password;
+    }
 
     if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path);
@@ -187,6 +225,8 @@ const editProfile = asyncHandler(async (req, res) => {
         isPrivate: updatedUser.isPrivate
     });
 });
+
+
 
 
 

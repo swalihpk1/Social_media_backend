@@ -18,7 +18,8 @@ router.get('/auth/google/callback', handleGoogleCallback);
 router.post('/register', registerUser);
 router.post('/logout', protect, logoutUser);
 router.get('/profile/:id', protect, getProfile);
-router.post('/editProfile', protect, editProfile);
+router.post('/editProfile/:id', protect, editProfile);
+// router.get('/showUsers',protect,showUsers)
 
 
 export default router;
